@@ -7559,7 +7559,15 @@ def _read_state_db_sidebar_overrides(
                         """,
                         count_chunk,
                     )
-                    for row in cur.fetchall():
+                    count_rows = cur.fetchall()
+                    # CLI growth is proved by actual message rows, not the
+                    # denormalized counter (which can survive deletions). GROUP
+                    # BY omits empty histories, so seed their counted IDs at zero.
+                    for sid in count_chunk:
+                        entry = overrides.setdefault(sid, {})
+                        if entry.get('_state_db_source') == 'cli':
+                            entry['_state_db_message_count'] = 0
+                    for row in count_rows:
                         sid = str(row['session_id'])
                         entry = overrides.setdefault(sid, {})
                         try:
